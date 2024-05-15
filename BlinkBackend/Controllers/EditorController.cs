@@ -38,24 +38,43 @@ namespace BlinkBackend.Controllers
 
 
         [HttpGet]
-        public HttpResponseMessage perpossal(string MoviName, string director, string DueDate, string status, int WriterId)
+        public HttpResponseMessage perpossal(string MoviName,int movieId,string type,int editorId, int balance, string director, string DueDate,string imagePath, string status, int WriterId)
         {
+
             try
             {
+                var request = HttpContext.Current.Request;
                 BlinkMovieEntities db = new BlinkMovieEntities();
                 DateTime CurrentDate = DateTime.Now;
                 // Assuming GenerateId() generates a unique ID for the proposal
+
+
                 var proposal = new SentProposals
                 {
                     SentProposal_ID = GenerateId(),
+                    Type = type,
+                    Editor_ID = editorId,
+                    Movie_ID = movieId,
                     Movie_Name = MoviName,
                     Director = director,
                     DueDate = DueDate,
                     Status = status,
                     Writer_ID = WriterId,
-                    Sent_at = CurrentDate.ToString()
+                    Sent_at = CurrentDate.ToString(),
+                    Image = imagePath,
+                    Balance = balance
 
-                };
+
+            };
+               /* var imageFile = request.Files["Image"];
+                if (imageFile != null && imageFile.ContentLength > 0)
+                {
+                    string imagePath = SaveImageToDisk(imageFile);
+
+                    proposal.Image = imagePath;
+                }*/
+
+
 
                 db.SentProposals.Add(proposal);
                 db.SaveChanges();
@@ -68,6 +87,9 @@ namespace BlinkBackend.Controllers
                 return Request.CreateResponse(HttpStatusCode.InternalServerError, $"An error occurred: {ex.Message}");
             }
         }
+
+
+
 
 
 
@@ -122,7 +144,7 @@ namespace BlinkBackend.Controllers
         }
 
        /*  \HUzaifa update [HttpGet]
-        public HttpResponseMessage GetAllMovies()
+        public HttpResponseMessage GetAllMovies()fetch
         {
             using (BlinkMovieEntities db = new BlinkMovieEntities())
             {
@@ -157,7 +179,6 @@ namespace BlinkBackend.Controllers
                 }
             }
         }
-
         [HttpPost]
         public HttpResponseMessage AcceptSentProject(int sProId)
         {
@@ -165,7 +186,7 @@ namespace BlinkBackend.Controllers
             try
             {
 
-                var existingProject = db.SentProject.FirstOrDefault(s => s.Movie_ID == sProId);
+                var existingProject = db.SentProject.FirstOrDefault(s => s.SentProject_ID == sProId);
                 if (existingProject == null)
                 {
                     return Request.CreateResponse(HttpStatusCode.NotFound, "Not Found");
@@ -175,25 +196,76 @@ namespace BlinkBackend.Controllers
                 db.SaveChanges();
 
 
-                var clip = db.Clips.FirstOrDefault(c => c.Movie_ID == sProId);
+                var proposal = db.SentProposals
+                                  .Where(s => s.SentProposal_ID == existingProject.SentProposal_ID).Select(s => new {
+                                      s.Sent_at,
+                                      s.Balance,
+                                      s.Type
+                                  }).FirstOrDefault();
 
-                if (clip != null)
+                int? balance = 0;
+
+                if (DateTime.Parse(proposal.Sent_at) <= DateTime.Parse(existingProject.Send_at))
                 {
-                    clip.Movie_ID = sProId;
-                    db.SaveChanges();
-
+                    balance = proposal.Balance;
                 }
                 else
                 {
-                    return Request.CreateResponse(HttpStatusCode.NotFound, "Clip not found");
+                    balance = (proposal.Balance - ((proposal.Balance * 20) / 100));
+                }
+
+                var writerBalace = db.Writer.Where(w => w.Writer_ID == existingProject.Writer_ID).FirstOrDefault();
+
+                writerBalace.Balance = balance;
+                db.SaveChanges();
+
+                if (proposal.Type == "Movie")
+                {
+                    var clips = db.Clips.Where(c => c.Sent_ID == sProId).ToList();
+
+                    if (clips.Any())
+                    {
+                        foreach (var clip in clips)
+                        {
+                            clip.Movie_ID = existingProject.Movie_ID;
+                            clip.Sent_ID = null;
+                        }
+                        db.SaveChanges();
+                    }
+                    else
+                    {
+                        return Request.CreateResponse(HttpStatusCode.NotFound, "Clips not found");
+                    }
+                }
+                else
+                {
+                    var clips = db.DramasClips.Where(c => c.Sent_ID == sProId).ToList();
+
+                    if (clips.Any())
+                    {
+                        foreach (var clip in clips)
+                        {
+                            clip.Movie_ID = existingProject.Movie_ID;
+                            clip.Sent_ID = null;
+
+                        }
+                        db.SaveChanges();
+                    }
+                    else
+                    {
+                        return Request.CreateResponse(HttpStatusCode.NotFound, "Clips not found");
+                    }
                 }
 
 
-                var summary = db.Summary.FirstOrDefault(s => s.Movie_ID == sProId);
+
+                var summary = db.Summary.FirstOrDefault(s => s.Sent_ID == sProId);
 
                 if (summary != null)
                 {
-                    summary.Movie_ID = sProId;
+                    summary.Movie_ID = existingProject.Movie_ID;
+                    summary.Sent_ID = null;
+
                     db.SaveChanges();
 
                 }
@@ -205,11 +277,11 @@ namespace BlinkBackend.Controllers
                 var setMovie = new GetMovie()
                 {
                     GetMovie_ID = GenerateId(),
-                    Clips_ID = clip.Clips_ID,
+                    // Clips_ID = clip.Clips_ID,
                     Writer_ID = existingProject.Writer_ID,
-                    Movie_ID = sProId,
-                    Summary_ID = summary.Summary_ID,
-                   
+                    Movie_ID = existingProject.Movie_ID,
+                    // Summary_ID = summary.Summary_ID,
+
                 };
                 db.GetMovie.Add(setMovie);
                 db.SaveChanges();
@@ -220,6 +292,10 @@ namespace BlinkBackend.Controllers
                 return Request.CreateResponse(ex);
             }
         }
+
+
+
+
 
 
         [HttpPost]
@@ -336,427 +412,73 @@ namespace BlinkBackend.Controllers
 
 
 
-
-        /* acording to huzaifa *//*
-
-        [HttpPost]
-
-        public HttpResponseMessage SentProposal()
-        {
-            BlinkMovieEntities db = new BlinkMovieEntities();
-            var request = HttpContext.Current.Request;
-
-            int? movieId = Int32.Parse(request["Movie_ID"]);
-            int? editorId = Int32.Parse(request["Editor_ID"]);
-            int? writerId = Int32.Parse(request["Writer_ID"]);
-            string movieName = request["Movie_Name"];
-            string[] genreArray = request.Form.GetValues("Genre");
-            HashSet<string> uniqueGenres = new HashSet<string>(genreArray);
-            string genre = string.Join(",", uniqueGenres);
-            string type = request["Type"];
-            string director = request["Director"];
-            string dueDate = request["DueDate"];
-
-
-            //  string image = request["Image"];
-            *//* var coverImage = request.Files["Cover_Image"];*//*
-            var Cover_Image = request.Files["Cover_Image"];
-            
-
-            try
-            {
-
-                if (movieId != 0)
-                {
-                    var proposal = new SentProposals()
-                    {
-                        SentProposal_ID = GenerateId(),
-                        Movie_ID = movieId,
-                        Editor_ID = editorId,
-                        Writer_ID = writerId,
-                        Movie_Name = movieName,
-                        Image = request["Image"],
-                        Cover_Image = request["Cover_Image"],
-                        Genre = genre,
-                        Type = type,
-                        Director = director,
-                        DueDate = dueDate,
-                        Status = "Sent",
-                        Writer_Notification = true
-                    };
-                    db.SentProposals.Add(proposal);
-                    db.SaveChanges();
-
-                    var response = new
-                    {
-
-                        proposal,
-
-                    };
-                    return Request.CreateResponse(HttpStatusCode.OK, response);
-                }
-                else
-                {
-                    int id = GenerateId();
-
-                    var movie = new Movie()
-                    {
-                        Movie_ID = id,
-                        Name = movieName,
-
-                        Category = genre,
-                        Type = type,
-                        Director = director,
-                        anySummaryOrClip = false
-                    };
-
-
-                    var imageFile = request.Files["Image"];
-                    if (imageFile != null)
-                    {
-                        var imagePath = SaveImageToDisk(imageFile);
-                        movie.Image = imagePath;
-                    }
-
-
-                    var coverImageFile = request.Files["Cover_Image"];
-                    if (coverImageFile != null)
-                    {
-                        string imagePath = SaveImageToDisk(coverImageFile);
-                        movie.CoverImage = imagePath;
-                    }
-                    db.Movie.Add(movie);
-
-                    db.SaveChanges();
-                    var proposal = new SentProposals()
-                    {
-                        SentProposal_ID = GenerateId(),
-                        Movie_ID = id,
-                        Editor_ID = editorId,
-                        Writer_ID = writerId,
-                        Movie_Name = movieName,
-                        Image = movie.Image,
-                        Cover_Image = movie.CoverImage,
-                        Genre = genre,
-                        Type = type,
-                        Director = director,
-                        DueDate = dueDate,
-                        Writer_Notification = true,
-                        Status = "Sent",
-                    };
-                    db.SentProposals.Add(proposal);
-                    db.SaveChanges();
-
-
-                    var response = new
-                    {
-                        movie,
-                        proposal
-                    };
-                    return Request.CreateResponse(HttpStatusCode.OK, response);
-                }
-
-
-
-
-
-
-            }
-            catch (Exception ex)
-            {
-                return Request.CreateResponse(ex);
-            }
-
-        }
-*/
-
-
-        /*faizanCod*/
-
-
-        /* [HttpPost]
-
-         public HttpResponseMessage SentProposal()
-         {
-             *//*BlinkMovie2Entities db = new BlinkMovie2Entities();*//*
-
-             BlinkMovieEntities db = new BlinkMovieEntities();
-             var request = HttpContext.Current.Request;
-
-             int? movieId = Int32.Parse(request["Movie_ID"]);
-             int? editorId = Int32.Parse(request["Editor_ID"]);
-             int? writerId = Int32.Parse(request["Writer_ID"]);
-             string movieName = request["Movie_Name"];
-             string[] genreArray = request.Form.GetValues("Genre");
-             HashSet<string> uniqueGenres = new HashSet<string>(genreArray);
-             string genre = string.Join(",", uniqueGenres);
-             string type = request["Type"];
-             string director = request["Director"];
-             string dueDate = request["DueDate"];
-             *//*int episode = Int32.Parse(request["Episode"]);
-             int amount = Int32.Parse(request["Amount"]);
- *//*
-             var imageFile = request.Files["Image"];
-             //string coverImage = request["Cover_Image"];
-
-             //return Request.CreateResponse(HttpStatusCode.OK ,"Image :: " +image);
-             var imageBase64 = request["Image"];
-
-             try
-             {
-
-                 if (movieId != 0)
-                 {
-                     var proposal = new SentProposals()
-                     {
-                         SentProposal_ID = GenerateId(),
-                         Movie_ID = movieId,
-                         Editor_ID = editorId,
-                         Writer_ID = writerId,
-                         Movie_Name = movieName,
-                         Image = SaveImageToDisk(imageFile),
-                         Cover_Image = request["Cover_Image"],
-                         Genre = genre,
-                         Type = type,
-                         Director = director,
-                         *//*Episode = episode,
-                         Balance = amount,*//*
-                         DueDate = dueDate,
-                         Status = "Sent",
-                         Writer_Notification = true
-
-                     };
-                     //SaveBase64ImageToDisk(proposal);
-                     db.SentProposals.Add(proposal);
-                     db.SaveChanges();
-
-                     var response = new
-                     {
-
-                         proposal,
-
-                     };
-                     return Request.CreateResponse(HttpStatusCode.OK, response);
-                 }
-                 else
-                 {
-                     int id = GenerateId();
-
-                     var movie = new Movie()
-                     {
-                         Movie_ID = id,
-                         Name = movieName,
-
-                         Category = genre,
-                         Type = type,
-                         Director = director,
-                         anySummaryOrClip = false
-                     };
-
-
-                     //var imageFile = request["Image"];
-                     if (imageFile != null)
-                     {
-                         string imagePath = SaveImageToDisk(imageFile);
-                         movie.Image = imagePath;
-                     }
-
-
-                     *//*var coverImageFile = request["Cover_Image"];
-                     if (coverImageFile != null )
-                     {
-                         string imagePath = SaveImageToDisk(coverImageFile);
-                         movie.CoverImage = imagePath;
-                     }*//*
-
-                     db.Movie.Add(movie);
-
-                     db.SaveChanges();
-                     var proposal = new SentProposals()
-                     {
-                         SentProposal_ID = GenerateId(),
-                         Movie_ID = id,
-                         Editor_ID = editorId,
-                         Writer_ID = writerId,
-                         Movie_Name = movieName,
-                         Image = movie.Image,
-                         //Cover_Image = movie.CoverImage,
-                         Genre = genre,
-                         Type = type,
-                         Director = director,
-                         DueDate = dueDate,
-                        *//* Episode = episode,
-                         Balance = amount,*//*
-                         Writer_Notification = true,
-                         Status = "Sent",
-                     };
-                     db.SentProposals.Add(proposal);
-                     db.SaveChanges();
-
-
-                     var response = new
-                     {
-                         movie,
-                         proposal
-                     };
-                     return Request.CreateResponse(HttpStatusCode.OK, response);
-                 }
-
-
-
-
-
-
-             }
-             catch (Exception ex)
-             {
-                 return Request.CreateResponse(ex);
-             }
-
-         }
- */
-
-
-
-
-
-        /* my code*/
-        /*       [HttpPost]
-
+        /*
+                [HttpPost]
                 public HttpResponseMessage SentProposal()
-        {
-            BlinkMovieEntities db = new BlinkMovieEntities();
-            var request = HttpContext.Current.Request;
-
-            int? movieId = Int32.Parse(request["Movie_ID"]);
-            int? editorId = Int32.Parse(request["Editor_ID"]);
-            int? writerId = Int32.Parse(request["Writer_ID"]);
-            string movieName = request["Movie_Name"];
-            string[] genreArray = request.Form.GetValues("Genre");
-            HashSet<string> uniqueGenres = new HashSet<string>(genreArray);
-            string genre = string.Join(",", uniqueGenres);
-            string type = request["Type"];
-            string director = request["Director"];
-            string dueDate = request["DueDate"];
-
-
-            var image = request["Image"];
-            var coverImage = request["Cover_Image"];
-
-
-            try
-            {
-
-                if (movieId != 0)
                 {
-                    var proposal = new SentProposals()
+                    BlinkMovieEntities db = new BlinkMovieEntities();
+                    DateTime CurrentDate = DateTime.Now;
+                    var request = HttpContext.Current.Request;
+
+
+
+                    try
                     {
-                        SentProposal_ID = GenerateId(),
-                        Movie_ID = movieId,
-                        Editor_ID = editorId,
-                        Writer_ID = writerId,
-                        Movie_Name = movieName,
-                        Image = request["Image"],
-                        Cover_Image = request["coverImage"],
-                        Genre = genre,
-                        Type = type,
-                        Director = director,
-                        DueDate = dueDate,
-                        Status = "Sent",
-                    };
-                    db.SentProposals.Add(proposal);
-                    db.SaveChanges();
-
-                    var response = new
-                    {
-
-                        proposal,
-                        haahaha = " faafafaf"
-                    };
-                    return Request.CreateResponse(HttpStatusCode.OK, response);
-                }
-                else
-                {
-                    int id = GenerateId();
-
-                    var movie = new Movie()
-                    {
-                        Movie_ID = id,
-                        Name = movieName,
-
-                        Category = genre,
-                        Type = type,
-                        Director = director,
-                        anySummaryOrClip = false
-                    };
+                        int? movieId = Int32.Parse(request["Movie_ID"]);
+                        int? editorId = Int32.Parse(request["Editor_ID"]);
+                        int? writerId = Int32.Parse(request["Writer_ID"]);
+                        string movieName = request["Movie_Name"];
+                        string[] genreArray = request.Form.GetValues("Genre");
+                        HashSet<string> uniqueGenres = new HashSet<string>(genreArray);
+                        string genre = string.Join(",", uniqueGenres);
+                        string type = request["Type"];
+                        string director = request["Director"];
+                        string dueDate = request["DueDate"];
 
 
-                    var imageFile = request.Files["Image"];
-                    if (imageFile != null)
-                    {
-                        string imagePath = SaveImageToDisk(imageFile);
-                        movie.Image = imagePath;
+
+                        var proposal = new SentProposals()
+                        {
+                            SentProposal_ID = GenerateId(),
+                            Movie_ID = movieId,
+                            Editor_ID = editorId,
+                            Writer_ID = writerId,
+                            Movie_Name = movieName,
+                            Image = request["Image"],
+                            *//*Cover_Image = request["Cover_Image"],*//*
+                            Genre = genre,
+                            Type = type,
+                            Director = director,
+                            DueDate = dueDate,
+                            Status = "Sent",
+                            Sent_at = CurrentDate.ToString()
+                        };
+                        db.SentProposals.Add(proposal);
+                        db.SaveChanges();
+
+                        var response = new
+                        {
+                            proposal,
+                            haahaha = " faafafaf"
+                        };
+                        return Request.CreateResponse(HttpStatusCode.OK, response);
+
                     }
-
-
-                    var coverImageFile = request.Files["Cover_Image"];
-                    if (coverImageFile != null)
+                    catch (Exception ex)
                     {
-                        var imagePath = SaveImageToDisk(coverImageFile);
-                        movie.CoverImage = imagePath;
+                        return Request.CreateResponse(HttpStatusCode.InternalServerError, ex.Message);
                     }
-                    db.Movie.Add(movie);
+                }*/
 
-                    db.SaveChanges();
-                    var proposal = new SentProposals()
-                    {
-                        SentProposal_ID = GenerateId(),
-                        Movie_ID = id,
-                        Editor_ID = editorId,
-                        Writer_ID = writerId,
-                        Movie_Name = movieName,
-                        Image = movie.Image,
-                        Cover_Image = movie.CoverImage,
-                        Genre = string.Join(",", genreArray),
-                        Type = type,
-                        Director = director,
-                        DueDate = dueDate,
-                        Status = "Sent",
-                    };
-                    db.SentProposals.Add(proposal);
-                    db.SaveChanges();
-
-
-                    var response = new
-                    {
-                        movie,
-                        proposal
-                    };
-                    return Request.CreateResponse(HttpStatusCode.OK, response);
-                }
-
-
-
-
-
-
-            }
-            catch (Exception ex)
-            {
-                return Request.CreateResponse(ex);
-            }
-
-        }
-*/
 
 
         [HttpPost]
-        public HttpResponseMessage SentProposal()
+         public HttpResponseMessage SentProposal()
         {
             BlinkMovieEntities db = new BlinkMovieEntities();
             DateTime CurrentDate = DateTime.Now;
             var request = HttpContext.Current.Request;
-            
+
 
 
             try
@@ -771,8 +493,9 @@ namespace BlinkBackend.Controllers
                 string type = request["Type"];
                 string director = request["Director"];
                 string dueDate = request["DueDate"];
+                int balance = Int32.Parse(request["Balance"]);
 
-               
+
                 if (movieId != 0)
                 {
                     var proposal = new SentProposals()
@@ -789,7 +512,8 @@ namespace BlinkBackend.Controllers
                         Director = director,
                         DueDate = dueDate,
                         Status = "Sent",
-                        Sent_at = CurrentDate.ToString()
+                        Sent_at = CurrentDate.ToString(),
+                        Balance =balance
                     };
                     db.SentProposals.Add(proposal);
                     db.SaveChanges();
@@ -812,25 +536,26 @@ namespace BlinkBackend.Controllers
                         Category = genre,
                         Type = type,
                         Director = director,
-                        anySummaryOrClip = false
+                        anySummaryOrClip = false,
+                        
                     };
 
-                  
-                        var imageFile = request.Files["Image"];
-                        if (imageFile != null && imageFile.ContentLength > 0)
-                        {
-                            string imagePath = SaveImageToDisk(imageFile);
-                      
+
+                    var imageFile = request.Files["Image"];
+                    if (imageFile != null && imageFile.ContentLength > 0)
+                    {
+                        string imagePath = SaveImageToDisk(imageFile);
+
                         movie.Image = imagePath;
-                        }
-                    
+                    }
+
                     var coverImageFile = request.Files["Cover_Image"];
-                        if (coverImageFile != null && coverImageFile.ContentLength > 0)
-                        {
-                            string imagePath = SaveImageToDisk(coverImageFile);
-                            movie.CoverImage = imagePath;
-                        }
-                    
+                    if (coverImageFile != null && coverImageFile.ContentLength > 0)
+                    {
+                        string imagePath = SaveImageToDisk(coverImageFile);
+                        movie.CoverImage = imagePath;
+                    }
+
 
                     db.Movie.Add(movie);
                     db.SaveChanges();
@@ -849,7 +574,8 @@ namespace BlinkBackend.Controllers
                         Director = director,
                         DueDate = dueDate,
                         Status = "Sent",
-                        Sent_at = CurrentDate.ToString()
+                        Sent_at = CurrentDate.ToString(),
+                        Balance = balance
                     };
                     db.SentProposals.Add(proposal);
                     db.SaveChanges();
@@ -881,6 +607,7 @@ namespace BlinkBackend.Controllers
                     s.SentProposal_ID,
                     s.Editor_ID,
                     s.Writer_ID,
+                    s.SentProject_ID,
                     ProposalData = db.SentProposals
                         .Where(sp => sp.SentProposal_ID == s.SentProposal_ID)
                         .Select(sp => new
@@ -892,9 +619,12 @@ namespace BlinkBackend.Controllers
                             sp.Type,
                             sp.Director
                         })
-                        .FirstOrDefault()
+                        .FirstOrDefault(),
+                        Writer_Name = db.Writer.FirstOrDefault(w => w.Writer_ID == s.Writer_ID).UserName,
                 })
+
                 .ToList();
+
 
             var responseContent = new
             {
@@ -935,6 +665,155 @@ namespace BlinkBackend.Controllers
 
             return Request.CreateResponse(HttpStatusCode.OK,responseContent);
         }
+        /* [HttpGet]
+         public HttpResponseMessage FetchSummary(int sentProjectId)
+         {
+             BlinkMovieEntities db = new BlinkMovieEntities();
+
+             try
+             {
+                 var project = db.SentProject.FirstOrDefault(s => s.SentProject_ID == sentProjectId);
+
+                 if (project == null)
+                 {
+                     return Request.CreateResponse(HttpStatusCode.NotFound, "SentProject not found");
+                 }
+
+                 var summaryData = db.Summary
+                                     .FirstOrDefault(s => s.Sent_ID == project.SentProject_ID);
+
+                 var movieData = db.Movie
+                                     .FirstOrDefault(m => m.Movie_ID == project.Movie_ID);
+
+                 var writerData = db.Writer
+                                     .FirstOrDefault(w => w.Writer_ID == project.Writer_ID);
+
+                 string mediaType = movieData.Type;
+
+                 object clipsData = null;
+
+                 if (mediaType == "Movie")
+                 {
+                     clipsData = db.Clips
+                                     .Where(c => c.Sent_ID == project.SentProject_ID)
+                                     .Select(s => new
+                                     {
+                                         s.Clips_ID,
+                                         s.Url,
+                                         s.End_time,
+                                         s.Start_time,
+                                         s.Title,
+                                         s.isCompoundClip
+                                     }).OrderBy(s => s.Start_time).ToList();
+                 }
+                 else
+                 {
+                     clipsData = db.DramasClips
+                                     .Where(c => c.Sent_ID == project.SentProject_ID)
+                                     .Select(s => new
+                                     {
+                                         s.DramasClip_ID,
+                                         s.Url,
+                                         s.End_time,
+                                         s.Start_time,
+                                         s.Title,
+                                         s.Episode,
+                                         s.isCompoundClip
+                                     }).OrderBy(s => s.Start_time).ToList();
+                 }
+
+                 var responseData = new
+                 {
+                     SentProject = project,
+                     SummaryData = summaryData,
+                     MovieData = movieData,
+                     WriterData = writerData,
+                     ClipsData = clipsData
+                 };
+
+                 return Request.CreateResponse(HttpStatusCode.OK, responseData);
+             }
+             catch (Exception ex)
+             {
+                 return Request.CreateResponse(HttpStatusCode.InternalServerError, ex.Message);
+             }
+         }
+ */
+
+        [HttpGet]
+        public HttpResponseMessage FetchSummary(int sentProjectId)
+        {
+            BlinkMovieEntities db = new BlinkMovieEntities();
+
+            try
+            {
+                var project = db.SentProject.FirstOrDefault(s => s.SentProject_ID == sentProjectId);
+
+                if (project == null)
+                {
+                    return Request.CreateResponse(HttpStatusCode.NotFound, "SentProject not found");
+                }
+
+                var summaryData = db.Summary
+                                    .FirstOrDefault(s => s.Sent_ID == project.SentProject_ID);
+
+                var movieData = db.Movie
+                                    .FirstOrDefault(m => m.Movie_ID == project.Movie_ID);
+
+                var writerData = db.Writer
+                                    .FirstOrDefault(w => w.Writer_ID == project.Writer_ID);
+
+                string mediaType = movieData.Type;
+
+                object clipsData = null;
+
+                if (mediaType == "Movie")
+                {
+                    clipsData = db.Clips
+                                    .Where(c => c.Sent_ID == project.SentProject_ID)
+                                    .Select(s => new
+                                    {
+                                        s.Clips_ID,
+                                        s.Url,
+                                        s.End_time,
+                                        s.Start_time,
+                                        s.Title,
+                                        s.isCompoundClip
+                                    }).OrderBy(s => s.Start_time).ToList();
+                }
+                else
+                {
+                    clipsData = db.DramasClips
+                                    .Where(c => c.Sent_ID == project.SentProject_ID)
+                                    .Select(s => new
+                                    {
+                                        s.DramasClip_ID,
+                                        s.Url,
+                                        s.End_time,
+                                        s.Start_time,
+                                        s.Title,
+                                        s.Episode,
+                                        s.isCompoundClip
+                                    }).OrderBy(s => s.Start_time).ToList();
+                }
+
+                var responseData = new
+                {
+                    SentProject = project,
+                    SummaryData = summaryData,
+                    MovieData = movieData,
+                    WriterData = writerData,
+                    ClipsData = clipsData
+                };
+
+                return Request.CreateResponse(HttpStatusCode.OK, responseData);
+            }
+            catch (Exception ex)
+            {
+                return Request.CreateResponse(HttpStatusCode.InternalServerError, ex.Message);
+            }
+        }
+
 
         [HttpGet]
         public HttpResponseMessage ShowSentProposals(int editorId)
@@ -976,23 +855,22 @@ namespace BlinkBackend.Controllers
 
 
 
-
         [HttpPost]
-        public HttpResponseMessage RewriteSentProject(int Movie_ID, string editorsComment)
+        public HttpResponseMessage RewriteSentProject(int SentProject_ID, string editorsComment)
         {
             BlinkMovieEntities db = new BlinkMovieEntities();
             try
             {
-                var sentProject = db.SentProject.FirstOrDefault(s => s.Movie_ID == Movie_ID);
+                var sentProject = db.SentProject.FirstOrDefault(s => s.SentProject_ID == SentProject_ID);
                 if (sentProject == null)
                 {
                     return Request.CreateResponse(HttpStatusCode.NotFound, "Project not found");
                 }
 
-                
+
                 sentProject.Status = "Rewrite";
 
-                
+
                 sentProject.EditorComment = editorsComment;
 
                 db.SaveChanges();
@@ -1001,10 +879,7 @@ namespace BlinkBackend.Controllers
             }
             catch (Exception ex)
             {
-                
-                
-                    return Request.CreateResponse(HttpStatusCode.InternalServerError, ex.Message);
-                
+                return Request.CreateResponse(HttpStatusCode.InternalServerError, ex.Message);
             }
         }
 

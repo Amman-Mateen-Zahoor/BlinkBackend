@@ -317,6 +317,9 @@
     <Compile Include="Models\Favorites.cs">
       <DependentUpon>Model1.tt</DependentUpon>
     </Compile>
+    <Compile Include="Models\FreeMovie.cs">
+      <DependentUpon>Model1.tt</DependentUpon>
+    </Compile>
     <Compile Include="Models\Genre.cs">
       <DependentUpon>Model1.tt</DependentUpon>
     </Compile>
