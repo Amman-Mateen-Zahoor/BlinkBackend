@@ -38,7 +38,7 @@ namespace BlinkBackend.Controllers
 
 
         [HttpGet]
-        public HttpResponseMessage perpossal(string MoviName,int movieId,string type,int editorId, int balance, string director, string DueDate,string imagePath, string status, int WriterId)
+        public HttpResponseMessage perpossal(string MoviName,string genre,int movieId,string type,int editorId,int episode, int balance, string director, string DueDate,string imagePath, string status, int WriterId)
         {
 
             try
@@ -53,6 +53,7 @@ namespace BlinkBackend.Controllers
                 {
                     SentProposal_ID = GenerateId(),
                     Type = type,
+                    Genre = genre,
                     Editor_ID = editorId,
                     Movie_ID = movieId,
                     Movie_Name = MoviName,
@@ -62,10 +63,11 @@ namespace BlinkBackend.Controllers
                     Writer_ID = WriterId,
                     Sent_at = CurrentDate.ToString(),
                     Image = imagePath,
-                    Balance = balance
+                    Balance = balance,
+                    Episode = episode,
 
 
-            };
+                };
                /* var imageFile = request.Files["Image"];
                 if (imageFile != null && imageFile.ContentLength > 0)
                 {
@@ -129,7 +131,8 @@ namespace BlinkBackend.Controllers
                     e.Category,
 /*my shoper*/
                     e.CoverImage,
-                    e.Image
+                    e.Image,
+                    e.Type,
                 }).ToList();
 
                 if (movies.Any())
@@ -651,8 +654,10 @@ namespace BlinkBackend.Controllers
             var clip = db.Clips.Where(s => s.Movie_ID == Movie_ID).Select(c => new {
                 c.Movie_ID,
                 c.Url,
-               // c.Start_time,
-                //c.End_time
+                 c.Start_time,
+                c.End_time,
+                c.Clips_ID,
+                c.Title
             });
 
             var responseContent = new
@@ -739,6 +744,82 @@ namespace BlinkBackend.Controllers
              }
          }
  */
+        /*
+                [HttpGet]
+                public HttpResponseMessage FetchSummary(int sentProjectId)
+                {
+                    BlinkMovieEntities db = new BlinkMovieEntities();
+
+                    try
+                    {
+                        var project = db.SentProject.FirstOrDefault(s => s.SentProject_ID == sentProjectId);
+
+                        if (project == null)
+                        {
+                            return Request.CreateResponse(HttpStatusCode.NotFound, "SentProject not found");
+                        }
+
+                        var summaryData = db.Summary
+                                            .FirstOrDefault(s => s.Sent_ID == project.SentProject_ID);
+
+                        var movieData = db.Movie
+                                            .FirstOrDefault(m => m.Movie_ID == project.Movie_ID);
+
+                        var writerData = db.Writer
+                                            .FirstOrDefault(w => w.Writer_ID == project.Writer_ID);
+
+                        string mediaType = movieData.Type;
+
+                        object clipsData = null;
+
+                        if (mediaType == "Movie")
+                        {
+                            clipsData = db.Clips
+                                            .Where(c => c.Sent_ID == project.SentProject_ID)
+                                            .Select(s => new
+                                            {
+                                                s.Clips_ID,
+                                                s.Url,
+                                                s.End_time,
+                                                s.Start_time,
+                                                s.Title,
+                                                s.isCompoundClip
+                                            }).OrderBy(s => s.Start_time).ToList();
+                        }
+                        else
+                        {
+                            clipsData = db.DramasClips
+                                            .Where(c => c.Sent_ID == project.SentProject_ID)
+                                            .Select(s => new
+                                            {
+                                                s.DramasClip_ID,
+                                                s.Url,
+                                                s.End_time,
+                                                s.Start_time,
+                                                s.Title,
+                                                s.Episode,
+                                                s.isCompoundClip
+                                            }).OrderBy(s => s.Start_time).ToList();
+                        }
+
+                        var responseData = new
+                        {
+                            SentProject = project,
+                            SummaryData = summaryData,
+                            MovieData = movieData,
+                            WriterData = writerData,
+                            ClipsData = clipsData
+                        };
+
+                        return Request.CreateResponse(HttpStatusCode.OK, responseData);
+                    }
+                    catch (Exception ex)
+                    {
+                        return Request.CreateResponse(HttpStatusCode.InternalServerError, ex.Message);
+                    }
+                }
+
+        */
 
         [HttpGet]
         public HttpResponseMessage FetchSummary(int sentProjectId)
@@ -814,7 +895,6 @@ namespace BlinkBackend.Controllers
             }
         }
 
-
         [HttpGet]
         public HttpResponseMessage ShowSentProposals(int editorId)
         {
@@ -848,6 +928,46 @@ namespace BlinkBackend.Controllers
             catch (Exception ex)
             {
                 return Request.CreateResponse(HttpStatusCode.InternalServerError, ex.Message);
+            }
+        }
+
+
+
+
+        [HttpGet]
+        public HttpResponseMessage HistoryAcceptedprojectByEditor(int Editor_ID)
+        {
+            using (BlinkMovieEntities db = new BlinkMovieEntities())
+            {
+                var projects = db.SentProject
+                    .Where(s => s.Status == "Accepted" && s.Editor_ID == Editor_ID)
+                    .OrderByDescending(s => s.Send_at)
+                    .Select(s => new
+                    {
+                        s.Movie_ID,
+                        s.Writer_ID,
+                        s.SentProject_ID,
+                        s.SentProposal_ID,
+                        ProposalData = db.SentProposals
+                            .Where(sp => sp.SentProposal_ID == s.SentProposal_ID)
+                            .Select(sp => new
+                            {
+                                sp.Movie_Name,
+                                sp.Image,
+                                sp.Director,
+                                sp.Type
+                            })
+                            .FirstOrDefault(),
+                        s.Status
+                    })
+                    .ToList();
+
+                var responseContent = new
+                {
+                    Project = projects
+                };
+
+                return Request.CreateResponse(HttpStatusCode.OK, responseContent);
             }
         }
 

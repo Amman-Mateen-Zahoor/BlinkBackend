@@ -258,7 +258,8 @@ namespace BlinkBackend.Controllers
                     e.DueDate,
                     e.Genre,
                     e.Director,
-                    e.Image
+                    e.Image,
+                    e.Type
                 }).ToList();
 
 
@@ -270,9 +271,103 @@ namespace BlinkBackend.Controllers
             }
         }
 
-
-
         [HttpPost]
+        public HttpResponseMessage SentProject(SentProjects spro)
+        {
+
+            BlinkMovieEntities db = new BlinkMovieEntities();
+            DateTime currentDate = DateTime.Now;
+
+
+            var proposal = db.SentProposals.Where(s => s.SentProposal_ID == spro.SentProposal_ID).FirstOrDefault();
+            try
+            {
+                proposal.Status = "Received";
+                db.SaveChanges();
+
+                var project = new SentProject()
+                {
+                    SentProject_ID = GenerateId(),
+                    Movie_ID = proposal.Movie_ID,
+                    SentProposal_ID = spro.SentProposal_ID,
+                    Editor_ID = proposal.Editor_ID,
+                    Writer_ID = spro.Writer_ID,
+                    Editor_Notification = true,
+                    Send_at = currentDate.ToString(),
+                    Status = "Sent"
+                };
+                db.SentProject.Add(project);
+                db.SaveChanges();
+
+
+                var summary = new Summary()
+                {
+                    Summary_ID = GenerateId(),
+                    Sent_ID = project.SentProject_ID,
+                    Writer_ID = spro.Writer_ID,
+                    Summary1 = spro.Summary,
+                   /* Episode = spro.Episode*/
+                };
+
+                db.Summary.Add(summary);
+                db.SaveChanges();
+
+                if (proposal.Type == "Movie")
+                {
+                    foreach (var clip in spro.Clips)
+                    {
+                        var newClip = new Clips()
+                        {
+                           /* Clips_ID = GenerateId(),*/
+                            Sent_ID = project.SentProject_ID,
+                            Writer_ID = proposal.Writer_ID,
+                            Url = clip.clip,
+                            Title = clip.Title,
+                            isCompoundClip = clip.isCompoundClip,
+                            Start_time = clip.Start_time,
+                            End_time = clip.End_time,
+                        };
+
+                        db.Clips.Add(newClip);
+                        
+                    }
+                    db.SaveChanges();
+                }
+                else
+                {
+                    foreach (var clip in spro.Clips)
+                    {
+                        var newDramasClip = new DramasClips()
+                        {
+                            DramasClip_ID = GenerateId(),
+                            Sent_ID = project.SentProject_ID,
+                            Writer_ID = proposal.Writer_ID,
+                            Url = clip.clip,
+                            Title = clip.Title,
+                            isCompoundClip = clip.isCompoundClip,
+                            Start_time = clip.Start_time,
+                            End_time = clip.End_time,
+                            Episode = clip.Episode
+                        };
+
+                        db.DramasClips.Add(newDramasClip);
+                        db.SaveChanges();
+                    }
+                }
+
+
+
+                return Request.CreateResponse(HttpStatusCode.OK, "Project Sent");
+            }
+            catch (Exception ex)
+            {
+                return Request.CreateResponse(ex);
+            }
+
+        }
+
+        /* my old code already working
+         * [HttpPost]
         public HttpResponseMessage SentProject(SentProjects spro)
         {
 
@@ -353,7 +448,10 @@ namespace BlinkBackend.Controllers
 
                 db.SaveChanges();
 
-                /* var clips = new Clips()
+                proposal.Status = "Received";
+                db.SaveChanges();
+
+                *//* var clips = new Clips()
                  {
                      Clips_ID = GenerateId(),
                      Sent_ID = spro.SentProposal_ID,
@@ -365,7 +463,7 @@ namespace BlinkBackend.Controllers
                  };
 
                  db.Clips.Add(clips);
-                 db.SaveChanges();*/
+                 db.SaveChanges();*//*
 
                 return Request.CreateResponse(HttpStatusCode.OK,"Project Sent");
             }
@@ -374,7 +472,7 @@ namespace BlinkBackend.Controllers
                 return Request.CreateResponse(ex);
             }
 
-        }
+        }*/
 
         /*      Huzaifa updated  [HttpPost]
                 public HttpResponseMessage SentProject(SentProjects spro)

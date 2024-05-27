@@ -4,47 +4,48 @@
   <edmx:Designer xmlns="http://schemas.microsoft.com/ado/2009/11/edmx">
     <!-- Diagram content (shape and connector positions) -->
     <edmx:Diagrams>
-      <Diagram DiagramId="be89a91ee922497db0ac91c9b0a85f8c" Name="Diagram1">
-        <EntityTypeShape EntityType="Model.BalanceRequests" Width="1.5" PointX="3" PointY="12.125" IsExpanded="true" />
+      <Diagram DiagramId="bf23ed8f68de4ad1bc2f75b4e3600dab" Name="Diagram1">
+        <EntityTypeShape EntityType="Model.Admin" Width="1.5" PointX="0.75" PointY="0.75" IsExpanded="true" />
+        <EntityTypeShape EntityType="Model.BalanceRequests" Width="1.5" PointX="3" PointY="10.875" IsExpanded="true" />
         <EntityTypeShape EntityType="Model.Clips" Width="1.5" PointX="3" PointY="18.125" IsExpanded="true" />
         <EntityTypeShape EntityType="Model.DramasClips" Width="1.5" PointX="6" PointY="18.25" IsExpanded="true" />
         <EntityTypeShape EntityType="Model.Editor" Width="1.5" PointX="3.75" PointY="26.75" IsExpanded="true" />
         <EntityTypeShape EntityType="Model.Favorites" Width="1.5" PointX="3" PointY="14.875" IsExpanded="true" />
-        <EntityTypeShape EntityType="Model.FreeMovie" Width="1.5" PointX="0.75" PointY="0.75" IsExpanded="true" />
-        <EntityTypeShape EntityType="Model.Genre" Width="1.5" PointX="2.75" PointY="0.75" IsExpanded="true" />
-        <EntityTypeShape EntityType="Model.GetMovie" Width="1.5" PointX="11.25" PointY="16.5" IsExpanded="true" />
+        <EntityTypeShape EntityType="Model.FreeMovie" Width="1.5" PointX="2.75" PointY="0.75" IsExpanded="true" />
+        <EntityTypeShape EntityType="Model.Genre" Width="1.5" PointX="0.75" PointY="3.75" IsExpanded="true" />
+        <EntityTypeShape EntityType="Model.GetMovie" Width="1.5" PointX="11.25" PointY="16.625" IsExpanded="true" />
         <EntityTypeShape EntityType="Model.History" Width="1.5" PointX="3" PointY="22.875" IsExpanded="true" />
-        <EntityTypeShape EntityType="Model.Interests" Width="1.5" PointX="0.75" PointY="3.75" IsExpanded="true" />
+        <EntityTypeShape EntityType="Model.Interests" Width="1.5" PointX="2.75" PointY="3.75" IsExpanded="true" />
         <EntityTypeShape EntityType="Model.Movie" Width="1.5" PointX="6.75" PointY="8.875" IsExpanded="true" />
-        <EntityTypeShape EntityType="Model.Reader" Width="1.5" PointX="0.75" PointY="13.25" IsExpanded="true" />
+        <EntityTypeShape EntityType="Model.Reader" Width="1.5" PointX="0.75" PointY="12.25" IsExpanded="true" />
         <EntityTypeShape EntityType="Model.ReaderRate" Width="1.5" PointX="6" PointY="14.625" IsExpanded="true" />
         <EntityTypeShape EntityType="Model.SentProject" Width="1.5" PointX="6" PointY="23.25" IsExpanded="true" />
         <EntityTypeShape EntityType="Model.SentProposals" Width="1.5" PointX="9" PointY="17.75" IsExpanded="true" />
         <EntityTypeShape EntityType="Model.Summary" Width="1.5" PointX="9" PointY="13.625" IsExpanded="true" />
         <EntityTypeShape EntityType="Model.Users" Width="1.5" PointX="9" PointY="23.625" IsExpanded="true" />
-        <EntityTypeShape EntityType="Model.Writer" Width="1.5" PointX="0.75" PointY="17.875" IsExpanded="true" />
-        <AssociationConnector Association="Model.FK__BalanceRe__Reade__6A30C649" ManuallyRouted="false" />
+        <EntityTypeShape EntityType="Model.Writer" Width="1.5" PointX="0.75" PointY="17.5" IsExpanded="true" />
+        <AssociationConnector Association="Model.FK__BalanceRequ__RID__08B54D69" ManuallyRouted="false" />
         <AssociationConnector Association="Model.FK__Clips__MID__6383C8BA" ManuallyRouted="false" />
         <AssociationConnector Association="Model.FK__Clips__WID__628FA481" ManuallyRouted="false" />
         <AssociationConnector Association="Model.FK__GetMovie__CID__6C190EBB" ManuallyRouted="false" />
-        <AssociationConnector Association="Model.FK__DramasCli__Movie__6EF57B66" ManuallyRouted="false" />
-        <AssociationConnector Association="Model.FK__DramasCli__Sent___6E01572D" ManuallyRouted="false" />
-        <AssociationConnector Association="Model.FK__DramasCli__Write__6D0D32F4" ManuallyRouted="false" />
+        <AssociationConnector Association="Model.FK__DramasCli__Movie__73BA3083" ManuallyRouted="false" />
+        <AssociationConnector Association="Model.FK__DramasCli__Sent___72C60C4A" ManuallyRouted="false" />
+        <AssociationConnector Association="Model.FK__DramasCli__Write__71D1E811" ManuallyRouted="false" />
         <AssociationConnector Association="Model.FK__SentProject__EID__36B12243" ManuallyRouted="false" />
         <AssociationConnector Association="Model.FK__SentProposa__EID__24927208" ManuallyRouted="false" />
         <AssociationConnector Association="Model.FK__Users__EID__0CBAE877" ManuallyRouted="false" />
         <AssociationConnector Association="Model.FK__Favorites__MID__7B5B524B" ManuallyRouted="false" />
-        <AssociationConnector Association="Model.FK__Favorites__Reade__70DDC3D8" ManuallyRouted="false" />
-        <AssociationConnector Association="Model.FK__Favorites__Write__6FE99F9F" ManuallyRouted="false" />
+        <AssociationConnector Association="Model.FK__Favorites__Reade__75A278F5" ManuallyRouted="false" />
+        <AssociationConnector Association="Model.FK__Favorites__Write__74AE54BC" ManuallyRouted="false" />
         <AssociationConnector Association="Model.FK__GetMovie__MID__693CA210" ManuallyRouted="false" />
         <AssociationConnector Association="Model.FK__GetMovie__SID__6B24EA82" ManuallyRouted="false" />
         <AssociationConnector Association="Model.FK__GetMovie__WID__6A30C649" ManuallyRouted="false" />
         <AssociationConnector Association="Model.FK__History__MID__02084FDA" ManuallyRouted="false" />
-        <AssociationConnector Association="Model.FK__History__Reader___778AC167" ManuallyRouted="false" />
-        <AssociationConnector Association="Model.FK__History__Writer___76969D2E" ManuallyRouted="false" />
+        <AssociationConnector Association="Model.FK__History__Reader___7C4F7684" ManuallyRouted="false" />
+        <AssociationConnector Association="Model.FK__History__Writer___7B5B524B" ManuallyRouted="false" />
         <AssociationConnector Association="Model.FK__ReaderRate__MID__2C3393D0" ManuallyRouted="false" />
         <AssociationConnector Association="Model.FK__Summary__MID__3F466844" ManuallyRouted="false" />
-        <AssociationConnector Association="Model.FK__ReaderRat__Reade__797309D9" ManuallyRouted="false" />
+        <AssociationConnector Association="Model.FK__ReaderRat__Reade__7E37BEF6" ManuallyRouted="false" />
         <AssociationConnector Association="Model.FK__Users__RID__0EA330E9" ManuallyRouted="false" />
         <AssociationConnector Association="Model.FK__ReaderRate__WID__2B3F6F97" ManuallyRouted="false" />
         <AssociationConnector Association="Model.FK__SentProject__WID__37A5467C" ManuallyRouted="false" />

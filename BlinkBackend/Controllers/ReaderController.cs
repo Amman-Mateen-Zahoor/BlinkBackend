@@ -95,6 +95,89 @@ namespace BlinkBackend.Controllers
             }
         }
 
+        [HttpPost]
+        public HttpResponseMessage RechargeBalance(int Reader_ID, int newBalance)
+        {
+            using (BlinkMovieEntities db = new BlinkMovieEntities())
+            {
+                try
+                {
+                    var reader = db.Reader.FirstOrDefault(r => r.Reader_ID == Reader_ID);
+                    if (reader == null)
+                    {
+                        return Request.CreateResponse(HttpStatusCode.NotFound, "Reader not found");
+                    }
+
+                    reader.Subscription = "Paid";
+                    reader.Balance = (reader.Balance ?? 0) + newBalance;
+                    db.SaveChanges();
+
+                    // Start a background task to reset the balance and subscription after 30 days
+                    Task.Run(async () => await ResetBalanceAndSubscription(reader.Reader_ID));
+
+                    return Request.CreateResponse(HttpStatusCode.OK, "Balance recharged successfully");
+                }
+                catch (Exception ex)
+                {
+                    return Request.CreateResponse(HttpStatusCode.InternalServerError, ex.Message);
+                }
+            }
+        }
+
+        private async Task ResetBalanceAndSubscription(int Reader_ID)
+        {
+            using (BlinkMovieEntities db = new BlinkMovieEntities())
+            {
+                await Task.Delay(TimeSpan.FromDays(1));
+                try
+                {
+                    var reader = db.Reader.FirstOrDefault(r => r.Reader_ID == Reader_ID);
+                    if (reader != null)
+                    {
+                        reader.Balance = 0;
+                        reader.Subscription = "Free";
+                        db.SaveChanges();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    // Log the exception or handle it as needed
+                    
+                }
+            }
+        }
+
+        [HttpPost]
+        public HttpResponseMessage RechargeBalanceFree(int Reader_ID)
+        {
+            using (BlinkMovieEntities db = new BlinkMovieEntities())
+            {
+                try
+                {
+                    var reader = db.Reader.FirstOrDefault(r => r.Reader_ID == Reader_ID);
+                    if (reader == null)
+                    {
+                        return Request.CreateResponse(HttpStatusCode.NotFound, "Reader not found");
+                    }
+
+                    reader.Subscription = "Free";
+                    reader.Balance = (reader.Balance ?? 0) + 0;
+                    db.SaveChanges();
+
+                    // Start a background task to reset the balance and subscription after 30 days
+                    Task.Run(async () => await ResetBalanceAndSubscription(reader.Reader_ID));
+
+                    return Request.CreateResponse(HttpStatusCode.OK, "Free Version Subscribed successfully");
+                }
+                catch (Exception ex)
+                {
+                    return Request.CreateResponse(HttpStatusCode.InternalServerError, ex.Message);
+                }
+            }
+        }
+
+       
+
         [HttpPut]
         public HttpResponseMessage UpdateSubscription(int Reader_ID, string subscription)
         {
