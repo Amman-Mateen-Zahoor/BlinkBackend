@@ -176,7 +176,88 @@ namespace BlinkBackend.Controllers
             }
         }
 
-       
+
+
+        /* [HttpPost]
+         public HttpResponseMessage UpdateWriterRating(int writerId, int rating)
+         {
+
+             using (var db = new BlinkMovieEntities())
+             {
+                 db.Configuration.LazyLoadingEnabled = false;
+                 db.Configuration.ProxyCreationEnabled = false;
+                 var writer = db.Writer.FirstOrDefault(w => w.Writer_ID == writerId);
+
+                 if (writer == null)
+                 {
+                     return Request.CreateResponse(HttpStatusCode.NotFound, "Writer not found");
+                 }
+
+
+                 if (rating < 0 || rating > 5)
+                 {
+                     return Request.CreateResponse(HttpStatusCode.BadRequest, "Rating should be between 0 and 5");
+                 }
+
+                 int? totalRatings = writer.TotalRatings + 1;
+                 int? totalRatingSum = writer.TotalRatingSum + rating;
+                 double? averageRating = (double)totalRatingSum / totalRatings;
+
+
+                 writer.TotalRatings = totalRatings;
+                 writer.TotalRatingSum = totalRatingSum;
+                 writer.AverageRating = averageRating;
+
+
+                 db.SaveChanges();
+
+                 return Request.CreateResponse(HttpStatusCode.OK, "Writer rating updated successfully");
+             }
+         }
+ */
+
+        [HttpPost]
+        public HttpResponseMessage UpdateWriterRating(int writerId, double rating)
+        {
+            try
+            {
+                using (var db = new BlinkMovieEntities())
+                {
+                    db.Configuration.LazyLoadingEnabled = false;
+                    db.Configuration.ProxyCreationEnabled = false;
+                    var writer = db.Writer.FirstOrDefault(w => w.Writer_ID == writerId);
+
+                    if (writer == null)
+                    {
+                        return Request.CreateResponse(HttpStatusCode.NotFound, "Writer not found");
+                    }
+
+                    if (rating < 0 || rating > 5)
+                    {
+                        return Request.CreateResponse(HttpStatusCode.BadRequest, "Rating should be between 0 and 5");
+                    }
+
+                    int? totalRatings = (writer.TotalRatings ?? 0) + 1;
+                    double? totalRatingSum = (writer.TotalRatingSum ?? 0) + rating;
+                    double? averageRating = totalRatingSum / totalRatings;
+
+                    writer.TotalRatings = totalRatings;
+                    writer.TotalRatingSum = (int)totalRatingSum;
+                    writer.AverageRating = averageRating;
+
+                    db.SaveChanges();
+
+                    return Request.CreateResponse(HttpStatusCode.OK, "Writer rating updated successfully");
+                }
+            }
+            catch (Exception ex)
+            {
+                return Request.CreateResponse(HttpStatusCode.InternalServerError, ex.Message);
+            }
+        }
+
+
+
 
         [HttpPut]
         public HttpResponseMessage UpdateSubscription(int Reader_ID, string subscription)
@@ -470,8 +551,8 @@ namespace BlinkBackend.Controllers
             }
         }
 
-       
-        [HttpGet]
+
+        /*[HttpGet]
         public HttpResponseMessage GetFavoriteDetails(int Reader_ID)
         {
             try
@@ -504,7 +585,47 @@ namespace BlinkBackend.Controllers
             {
                 return Request.CreateResponse(HttpStatusCode.InternalServerError, ex.Message);
             }
+        }*/
+
+
+        [HttpGet]
+        public HttpResponseMessage GetFavoriteDetails(int Reader_ID)
+        {
+            try
+            {
+                using (var db = new BlinkMovieEntities())
+                {
+                    var result = db.Favorites
+                        .Where(fav => fav.Reader_ID == Reader_ID)
+                        .Join(db.Writer, fav => fav.Writer_ID, writer => writer.Writer_ID, (fav, writer) => new { fav, writer })
+                        .Join(db.Movie, x => x.fav.Movie_ID, movie => movie.Movie_ID, (x, movie) => new { x.fav, x.writer, movie })
+                        .ToList();
+
+                    var details = result
+                        .GroupBy(x => x.fav.Movie_ID)
+                        .Select(g => g.First())
+                        .Select(x => new
+                        {
+                            ReaderId = x.fav.Reader_ID,
+                            WriterId = x.fav.Writer_ID,
+                            MovieId = x.fav.Movie_ID,
+                            WriterName = x.writer.UserName,
+                            MovieTitle = x.movie.Name,
+                            Director = x.movie.Director,
+                            MovieRating = x.movie.Rating,
+                            WriterRating = x.writer.Rating
+                        })
+                        .ToList<object>();
+
+                    return Request.CreateResponse(HttpStatusCode.OK, details);
+                }
+            }
+            catch (Exception ex)
+            {
+                return Request.CreateResponse(HttpStatusCode.InternalServerError, ex.Message);
+            }
         }
+
 
         [HttpGet]
         public HttpResponseMessage GetHistoryDetails(int Reader_ID)
@@ -773,6 +894,11 @@ namespace BlinkBackend.Controllers
                 }
             }
         }
+
+
+
+
+
 
 
         [HttpPost]

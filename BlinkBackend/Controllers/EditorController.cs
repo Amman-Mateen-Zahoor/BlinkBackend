@@ -650,6 +650,7 @@ namespace BlinkBackend.Controllers
                 s.Movie_ID,
                 s.Summary1,
                 s.Writer_ID
+                
             });
             var clip = db.Clips.Where(s => s.Movie_ID == Movie_ID).Select(c => new {
                 c.Movie_ID,
@@ -860,7 +861,7 @@ namespace BlinkBackend.Controllers
                                         s.Start_time,
                                         s.Title,
                                         s.isCompoundClip
-                                    }).OrderBy(s => s.Start_time).ToList();
+                                    }).ToList();
                 }
                 else
                 {
@@ -875,7 +876,7 @@ namespace BlinkBackend.Controllers
                                         s.Title,
                                         s.Episode,
                                         s.isCompoundClip
-                                    }).OrderBy(s => s.Start_time).ToList();
+                                    }).ToList();
                 }
 
                 var responseData = new
