@@ -396,6 +396,7 @@ namespace BlinkBackend.Controllers
 
                 string role = request["Role"];
                 string password = request["Password"];
+                string interest = request["Interest"];
 
 
 
@@ -409,6 +410,7 @@ namespace BlinkBackend.Controllers
                         Email = email,
                         UserName = username,
                         Password = password,
+                        Interest = interest,
                     };
                     db.Reader.Add(newUser);
 
@@ -456,6 +458,7 @@ namespace BlinkBackend.Controllers
                         Email = email,
                         UserName = username,
                         Password = password,
+                        Interest = interest,
                     };
                     db.Writer.Add(newUser);
 
@@ -513,6 +516,7 @@ namespace BlinkBackend.Controllers
                         Email = email,
                         UserName = username,
                         Password = password,
+                        Interest = interest,
                     };
                     db.Editor.Add(newUser);
 
@@ -587,6 +591,20 @@ namespace BlinkBackend.Controllers
                         break;
 
                     case "editor":
+                        additionalInfo = db.Editor.Where(e => e.Editor_ID == user.Editor_ID).Select(e => new
+                        {
+                            e.Editor_ID,
+                            e.Email,
+                            e.UserName,
+                            e.Password,
+
+                            e.Interest,
+
+                            // Add other properties you want to include
+                        });
+                        break;
+
+                    case "admin":
                         additionalInfo = db.Editor.Where(e => e.Editor_ID == user.Editor_ID).Select(e => new
                         {
                             e.Editor_ID,

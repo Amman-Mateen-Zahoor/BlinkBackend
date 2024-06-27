@@ -4,7 +4,7 @@
   <edmx:Designer xmlns="http://schemas.microsoft.com/ado/2009/11/edmx">
     <!-- Diagram content (shape and connector positions) -->
     <edmx:Diagrams>
-      <Diagram DiagramId="bf23ed8f68de4ad1bc2f75b4e3600dab" Name="Diagram1">
+      <Diagram DiagramId="460a1314eb934dceac2be688ddee2aa4" Name="Diagram1">
         <EntityTypeShape EntityType="Model.Admin" Width="1.5" PointX="0.75" PointY="0.75" IsExpanded="true" />
         <EntityTypeShape EntityType="Model.BalanceRequests" Width="1.5" PointX="3" PointY="10.875" IsExpanded="true" />
         <EntityTypeShape EntityType="Model.Clips" Width="1.5" PointX="3" PointY="18.125" IsExpanded="true" />
@@ -16,7 +16,7 @@
         <EntityTypeShape EntityType="Model.GetMovie" Width="1.5" PointX="11.25" PointY="16.625" IsExpanded="true" />
         <EntityTypeShape EntityType="Model.History" Width="1.5" PointX="3" PointY="22.875" IsExpanded="true" />
         <EntityTypeShape EntityType="Model.Interests" Width="1.5" PointX="2.75" PointY="3.75" IsExpanded="true" />
-        <EntityTypeShape EntityType="Model.Movie" Width="1.5" PointX="6.75" PointY="8.875" IsExpanded="true" />
+        <EntityTypeShape EntityType="Model.Movie" Width="1.5" PointX="6.75" PointY="8.5" IsExpanded="true" />
         <EntityTypeShape EntityType="Model.Reader" Width="1.5" PointX="0.75" PointY="12.25" IsExpanded="true" />
         <EntityTypeShape EntityType="Model.ReaderRate" Width="1.5" PointX="6" PointY="14.625" IsExpanded="true" />
         <EntityTypeShape EntityType="Model.SentProject" Width="1.5" PointX="6" PointY="23.25" IsExpanded="true" />

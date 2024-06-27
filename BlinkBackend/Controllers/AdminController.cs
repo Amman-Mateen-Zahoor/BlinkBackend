@@ -16,26 +16,149 @@ namespace BlinkBackend.Controllers
     {
         readonly BlinkMovieEntities db = new BlinkMovieEntities();
 
+        /* [HttpPut]
+         public HttpResponseMessage AcceptBalanceRequest(int Reader_ID)
+         {
+
+                 var balanc = db.BalanceRequests.FirstOrDefault(r => r.Reader_ID == Reader_ID);
+                 var reader =db.Reader.FirstOrDefault(r => r.Reader_ID == Reader_ID);    
+
+                 if (balanc != null)
+                 {
+                     reader.Balance += balanc.Balance;
+                     db.SaveChanges();
+
+                     return Request.CreateResponse(HttpStatusCode.OK, "Balance updated successfully");
+                 }
+                 else
+                 {
+                     return Request.CreateResponse(HttpStatusCode.NotFound, "User not found");
+                 }
+
+         }*/
         [HttpPut]
-        public HttpResponseMessage AcceptBalanceRequest(int Reader_ID)
+
+        public HttpResponseMessage AcceptBalanceRequest(int id)
         {
-            
-                var balanc = db.BalanceRequests.FirstOrDefault(r => r.Reader_ID == Reader_ID);
-                var reader =db.Reader.FirstOrDefault(r => r.Reader_ID == Reader_ID);    
+            using (var db = new BlinkMovieEntities())
+            {
+                var balanceRequest = db.BalanceRequests.FirstOrDefault(br => br.Balance_ID == id);
 
-                if (balanc != null)
+                if (balanceRequest == null)
                 {
-                    reader.Balance += balanc.Balance;
-                    db.SaveChanges();
+                    return Request.CreateResponse(HttpStatusCode.NotFound, "Balance request not found.");
+                }
 
-                    return Request.CreateResponse(HttpStatusCode.OK, "Balance updated successfully");
-                }
-                else
+                if (balanceRequest.Status == "Accepted")
                 {
-                    return Request.CreateResponse(HttpStatusCode.NotFound, "User not found");
+                    return Request.CreateResponse(HttpStatusCode.BadRequest, "Balance request is already accepted.");
                 }
-            
+
+                var reader = db.Reader.FirstOrDefault(r => r.Reader_ID == balanceRequest.Reader_ID);
+
+                if (reader == null)
+                {
+                    return Request.CreateResponse(HttpStatusCode.NotFound, "Reader not found.");
+                }
+
+
+                reader.Balance += balanceRequest.Balance;
+
+
+                balanceRequest.Status = "Accepted";
+
+
+                db.SaveChanges();
+
+                return Request.CreateResponse(HttpStatusCode.OK, "Balance request accepted and reader's balance updated.");
+            }
         }
+
+
+        [HttpGet]
+        public HttpResponseMessage GetBalanceRequests()
+        {
+            using (var db = new BlinkMovieEntities())
+            {
+                var balanceRequests = db.BalanceRequests.Where(br => br.Status == "Sent")
+                    .Select(br => new
+                    {
+                        br.Balance_ID,
+                        br.Balance,
+                        br.RequestDate,
+                        br.Status,
+                        ReaderDetails = db.Reader
+                            .Where(r => r.Reader_ID == br.Reader_ID)
+                            .Select(r => new
+                            {
+                                r.UserName,
+                                r.Email,
+                                r.Image
+                            })
+                            .FirstOrDefault()
+                    }).OrderBy(s => s.RequestDate)
+                    .ToList();
+
+                return Request.CreateResponse(HttpStatusCode.OK, balanceRequests);
+            }
+        }
+
+        [HttpGet]
+        public HttpResponseMessage GetAdminNotificationCount()
+        {
+            try
+            {
+                using (var db = new BlinkMovieEntities())
+                {
+                    db.Configuration.LazyLoadingEnabled = false;
+                    db.Configuration.ProxyCreationEnabled = false;
+
+                    var notificationCount = db.BalanceRequests
+                                              .Count(br => br.adminNotifications == true);
+                    var notification = db.BalanceRequests
+                                         .Where(br => br.adminNotifications == true)
+                                         .Select(s => new
+                                         {
+
+                                             Balance_ID = s.Balance_ID
+                                         })
+                                         .ToList();
+
+                    var response = new
+                    {
+                        count = notificationCount,
+                        Notification = notification
+                    };
+
+                    return Request.CreateResponse(HttpStatusCode.OK, response);
+                }
+            }
+            catch (Exception ex)
+            {
+                // Log the exception details (ex)
+                return Request.CreateErrorResponse(HttpStatusCode.InternalServerError, ex.Message);
+            }
+        }
+
+        [HttpPut]
+
+        public HttpResponseMessage ResetAdminNotifications()
+        {
+            using (var db = new BlinkMovieEntities())
+            {
+                var balanceRequests = db.BalanceRequests.Where(br => br.adminNotifications == true);
+
+                foreach (var request in balanceRequests)
+                {
+                    request.adminNotifications = false;
+                }
+
+                db.SaveChanges();
+
+                return Request.CreateResponse(HttpStatusCode.OK, "Admin notifications reset successfully.");
+            }
+        }
+
 
         [HttpDelete]
         public HttpResponseMessage DeleteUser(int id, string role)
@@ -89,6 +212,9 @@ namespace BlinkBackend.Controllers
                 return Request.CreateResponse(HttpStatusCode.InternalServerError, ex.Message);
             }
         }
+
+
+
 
         [HttpPost]
         public HttpResponseMessage AddEditor(Editor editorForm)
