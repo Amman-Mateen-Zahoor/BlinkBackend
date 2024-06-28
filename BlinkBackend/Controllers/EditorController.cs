@@ -133,6 +133,7 @@ namespace BlinkBackend.Controllers
                     e.CoverImage,
                     e.Image,
                     e.Type,
+                    e.Cast
                 }).ToList();
 
                 if (movies.Any())
@@ -434,6 +435,7 @@ namespace BlinkBackend.Controllers
                 string genre = string.Join(",", uniqueGenres);
                 string type = request["Type"];
                 string director = request["Director"];
+                string cast = request["Cast"];
                 /*string dueDate = request["DueDate"];*/
 
                 if (movieId != 0)
@@ -450,6 +452,7 @@ namespace BlinkBackend.Controllers
                         Genre = genre,
                         Type = type,
                         Director = director,
+                        Cast = cast,
                         /*DueDate = dueDate,*/
                         /*Status = "Sent",*/
                     };
@@ -473,6 +476,7 @@ namespace BlinkBackend.Controllers
                         Name = movieName,
                         Category = genre,
                         Type = type,
+                        Cast = cast,
                         Director = director,
                         anySummaryOrClip = false
                     };
@@ -591,8 +595,131 @@ namespace BlinkBackend.Controllers
 
 
 
+        /* [HttpPost]
+          public HttpResponseMessage SentProposal()
+         {
+             BlinkMovieEntities db = new BlinkMovieEntities();
+             DateTime CurrentDate = DateTime.Now;
+             var request = HttpContext.Current.Request;
+
+
+
+             try
+             {
+                 int? movieId = Int32.Parse(request["Movie_ID"]);
+                 int? editorId = Int32.Parse(request["Editor_ID"]);
+                 int? writerId = Int32.Parse(request["Writer_ID"]);
+                 string movieName = request["Movie_Name"];
+                 string[] genreArray = request.Form.GetValues("Genre");
+                 HashSet<string> uniqueGenres = new HashSet<string>(genreArray);
+                 string genre = string.Join(",", uniqueGenres);
+                 string type = request["Type"];
+                 string director = request["Director"];
+                 string dueDate = request["DueDate"];
+                 int balance = Int32.Parse(request["Balance"]);
+
+
+                 if (movieId != 0)
+                 {
+                     var proposal = new SentProposals()
+                     {
+                         SentProposal_ID = GenerateId(),
+                         Movie_ID = movieId,
+                         Editor_ID = editorId,
+                         Writer_ID = writerId,
+                         Movie_Name = movieName,
+                         Image = request["Image"],
+                         Cover_Image = request["Cover_Image"],
+                         Genre = genre,
+                         Type = type,
+                         Director = director,
+                         DueDate = dueDate,
+                         Status = "Sent",
+                         Sent_at = CurrentDate.ToString(),
+                         Balance =balance
+                     };
+                     db.SentProposals.Add(proposal);
+                     db.SaveChanges();
+
+                     var response = new
+                     {
+                         proposal,
+                         haahaha = " faafafaf"
+                     };
+                     return Request.CreateResponse(HttpStatusCode.OK, response);
+                 }
+                 else
+                 {
+                     int id = GenerateId();
+
+                     var movie = new Movie()
+                     {
+                         Movie_ID = id,
+                         Name = movieName,
+                         Category = genre,
+                         Type = type,
+                         Director = director,
+                         anySummaryOrClip = false,
+
+                     };
+
+
+                     var imageFile = request.Files["Image"];
+                     if (imageFile != null && imageFile.ContentLength > 0)
+                     {
+                         string imagePath = SaveImageToDisk(imageFile);
+
+                         movie.Image = imagePath;
+                     }
+
+                     var coverImageFile = request.Files["Cover_Image"];
+                     if (coverImageFile != null && coverImageFile.ContentLength > 0)
+                     {
+                         string imagePath = SaveImageToDisk(coverImageFile);
+                         movie.CoverImage = imagePath;
+                     }
+
+
+                     db.Movie.Add(movie);
+                     db.SaveChanges();
+
+                     var proposal = new SentProposals()
+                     {
+                         SentProposal_ID = GenerateId(),
+                         Movie_ID = id,
+                         Editor_ID = editorId,
+                         Writer_ID = writerId,
+                         Movie_Name = movieName,
+                         Image = movie.Image,
+                         Cover_Image = movie.CoverImage,
+                         Genre = string.Join(",", genreArray),
+                         Type = type,
+                         Director = director,
+                         DueDate = dueDate,
+                         Status = "Sent",
+                         Sent_at = CurrentDate.ToString(),
+                         Balance = balance
+                     };
+                     db.SentProposals.Add(proposal);
+                     db.SaveChanges();
+
+                     var response = new
+                     {
+                         movie,
+                         proposal
+                     };
+                     return Request.CreateResponse(HttpStatusCode.OK, response);
+                 }
+             }
+             catch (Exception ex)
+             {
+                 return Request.CreateResponse(HttpStatusCode.InternalServerError, ex.Message);
+             }
+         }
+
+ */
         [HttpPost]
-         public HttpResponseMessage SentProposal()
+        public HttpResponseMessage SentProposal()
         {
             BlinkMovieEntities db = new BlinkMovieEntities();
             DateTime CurrentDate = DateTime.Now;
@@ -613,7 +740,7 @@ namespace BlinkBackend.Controllers
                 string director = request["Director"];
                 string dueDate = request["DueDate"];
                 int balance = Int32.Parse(request["Balance"]);
-
+                string cast = request["Cast"];
 
                 if (movieId != 0)
                 {
@@ -631,8 +758,9 @@ namespace BlinkBackend.Controllers
                         Director = director,
                         DueDate = dueDate,
                         Status = "Sent",
+                        Cast = cast,
                         Sent_at = CurrentDate.ToString(),
-                        Balance =balance
+                        Balance = balance
                     };
                     db.SentProposals.Add(proposal);
                     db.SaveChanges();
@@ -653,10 +781,11 @@ namespace BlinkBackend.Controllers
                         Movie_ID = id,
                         Name = movieName,
                         Category = genre,
+                        Cast = cast,
                         Type = type,
                         Director = director,
                         anySummaryOrClip = false,
-                        
+
                     };
 
 
@@ -694,7 +823,8 @@ namespace BlinkBackend.Controllers
                         DueDate = dueDate,
                         Status = "Sent",
                         Sent_at = CurrentDate.ToString(),
-                        Balance = balance
+                        Balance = balance,
+                        Cast = cast,
                     };
                     db.SentProposals.Add(proposal);
                     db.SaveChanges();
@@ -712,6 +842,8 @@ namespace BlinkBackend.Controllers
                 return Request.CreateResponse(HttpStatusCode.InternalServerError, ex.Message);
             }
         }
+
+
 
         /*
                 [HttpGet]
